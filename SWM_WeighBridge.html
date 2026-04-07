@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pune Municipal Corporation – Vehicle Entry</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f4f4f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .form-card {
+      background: #ffffff;
+      border: 1px solid #e0ddd5;
+      border-radius: 12px;
+      padding: 2rem 2.5rem;
+      width: 100%;
+      max-width: 560px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 1.75rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid #e8e6de;
+    }
+    .header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1a1a18;
+      margin-bottom: 4px;
+    }
+    .header .subtitle {
+      font-size: 13px;
+      color: #888780;
+      margin-top: 4px;
+    }
+    .login-badge {
+      display: inline-block;
+      background: #FAEEDA;
+      color: #633806;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: 8px;
+      margin-top: 8px;
+      letter-spacing: 0.3px;
+    }
+    .login-label {
+      font-size: 12px;
+      color: #888780;
+      margin-top: 10px;
+    }
+
+    /* Field rows */
+    .field-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .field-label {
+      font-size: 13px;
+      color: #5f5e5a;
+      text-align: right;
+      padding-right: 4px;
+    }
+    .field-unit {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .field-unit input {
+      flex: 1;
+      min-width: 0;
+    }
+    .unit-tag {
+      font-size: 12px;
+      color: #b4b2a9;
+      white-space: nowrap;
+    }
+
+    /* Inputs & Selects */
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      height: 36px;
+      padding: 0 10px;
+      border: 1px solid #d3d1c7;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1a1a18;
+      background: #ffffff;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus {
+      border-color: #378ADD;
+      box-shadow: 0 0 0 3px rgba(55,138,221,0.12);
+    }
+    input.highlight {
+      background: #FAEEDA;
+    }
+
+    /* Net weight read-only display */
+    .net-weight-display {
+      background: #f4f4f0;
+      border: 1px solid #d3d1c7;
+      border-radius: 8px;
+      padding: 0 10px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      color: #1a1a18;
+      flex: 1;
+      font-weight: 500;
+    }
+
+    /* Divider */
+    .divider {
+      border: none;
+      border-top: 1px solid #e8e6de;
+      margin: 1.25rem 0;
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 1.75rem;
+    }
+    .btn {
+      padding: 9px 22px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid #d3d1c7;
+      background: #ffffff;
+      color: #1a1a18;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn:hover { background: #f4f4f0; }
+    .btn:active { transform: scale(0.98); }
+
+    .btn-refresh {
+      background: #E6F1FB;
+      color: #185FA5;
+      border-color: #B5D4F4;
+    }
+    .btn-refresh:hover { background: #B5D4F4; }
+
+    .btn-submit {
+      background: #1D9E75;
+      color: #ffffff;
+      border-color: #0F6E56;
+    }
+    .btn-submit:hover { background: #0F6E56; }
+
+    /* Toast */
+    .toast {
+      display: none;
+      margin-top: 1rem;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      text-align: center;
+      border: 1px solid transparent;
+    }
+    .toast.success { background: #EAF3DE; color: #3B6D11; border-color: #C0DD97; }
+    .toast.error   { background: #FCEBEB; color: #A32D2D; border-color: #F7C1C1; }
+    .toast.info    { background: #E6F1FB; color: #185FA5; border-color: #B5D4F4; }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .form-card { padding: 1.5rem 1.25rem; }
+      .field-row { grid-template-columns: 120px 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="form-card">
+  <div class="header">
+    <h1>Pune Municipal Corporation</h1>
+    <div class="subtitle">Vehicle Entry System</div>
+    <div>
+      <div class="login-label">User Login</div>
+      <div class="login-badge">Paid Ramp</div>
+    </div>
+  </div>
+
+  <div class="field-row">
+    <label class="field-label" for="driverName">Driver name</label>
+    <input type="text" id="driverName" placeholder="Enter driver name" />
+  </div>
+
+  <div class="field-row">
+    <label class="field-label" for="vehicleNumber">Vehicle number</label>
+    <input type="text" id="vehicleNumber" class="highlight" value="MH12XY0138" placeholder="e.g. MH12XY0138" />
+  </div>
+
+  <div class="field-row">
+    <label class="field-label" for="vehicleType">Vehicle type</label>
+    <input type="text" id="vehicleType" value="BRC" placeholder="Vehicle type" />
+  </div>
+
+  <div class="field-row">
+    <label class="field-label" for="unloading">Unloading</label>
+    <select id="unloading">
+      <option>Bhoomi Green 350TPD</option>
+      <option>Bhoomi Vadgaon 200TPD</option>
+      <option>Bhoomi Mech 500TPD</option>
+      <option>Farmer</option>
+      <option>Adarsh Ramtekdi 50TPD</option>
+    </select>
+  </div>
+
+  <hr class="divider" />
+
+  <div class="field-row">
+    <label class="field-label" for="grossWeight">Gross weight</label>
+    <div class="field-unit">
+      <input type="number" id="grossWeight" class="highlight" value="23400" min="0" oninput="calcNet()" readonly=""/>
+      <span class="unit-tag">kg</span>
+    </div>
+  </div>
+
+  <div class="field-row">
+    <label class="field-label" for="tareWeight">Tare weight</label>
+    <div class="field-unit">
+      <input type="number" id="tareWeight" class="highlight" value="14300" min="0" oninput="calcNet()" readonly=""/>
+      <span class="unit-tag">kg</span>
+    </div>
+  </div>
+
+  <div class="field-row">
+    <label class="field-label">Net weight</label>
+    <div class="field-unit">
+      <div class="net-weight-display" id="netWeight">9100</div>
+      <span class="unit-tag">kg</span>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <div class="field-row">
+    <label class="field-label" for="garbageType">Garbage type</label>
+    <select id="garbageType">
+      <option>Dry waste</option>
+      <option>Wet waste</option>
+      <option>Dry-Wet waste</option>
+      <option>Garden Waste</option>
+      <option>Lagacy waste</option>
+      <option>6mm Core</option>
+    </select>
+  </div>
+
+  <div class="field-row">
+    <label class="field-label" for="entryType">Entry type</label>
+    <select id="entryType">
+      <option>Outgoing</option>
+      <option>Incoming</option>
+    </select>
+  </div>
+
+  <div class="field-row">
+    <label class="field-label" for="zoneName">Zone</label>
+    <select id="zoneName">
+      <option>1</option>
+      <option>2</option>
+      <option>3</option>
+      <option>4</option>
+      <option>5</option>
+    </select>
+  </div>
+  
+  <div class="field-row">
+    <label class="field-label" for="wardName">Ward name</label>
+    <select id="wardName">
+      <option>Nagar Road</option>
+      <option>Yerawada-Kalas</option>
+      <option>Dhole Patil Road</option>
+      <option>Kothrud-Bavdhan</option>
+      <option>Shivajinagar-Ghole Road</option>
+      <option>Aundh-Baner</option>
+      <option>Dhankawadi-Sahakarnagar</option>
+      <option>Sinhgad Road</option>
+      <option>Warje-Karvenagar</option>
+      <option>Hadapsar-Mundhwa</option>
+      <option>Kondhwa Yewlewadi</option>
+      <option>Wanwadi-Ramtekdi</option>
+      <option>Kasba-Vishrambaug</option>
+      <option>Bibwewadi</option>
+      <option>Bhawani Peth</option>
+      
+    </select>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn" onclick="resetForm()">Reset</button>
+    <button class="btn btn-refresh" onclick="refreshForm()">Refresh</button>
+    <button class="btn btn-submit" onclick="submitForm()">Submit</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+  function calcNet() {
+    const gross = parseFloat(document.getElementById('grossWeight').value) || 0;
+    const tare  = parseFloat(document.getElementById('tareWeight').value)  || 0;
+    const net   = gross - tare;
+    document.getElementById('netWeight').textContent =
+      net >= 0 ? net.toLocaleString() : '—';
+  }
+
+  function resetForm() {
+    document.getElementById('driverName').value    = '';
+    document.getElementById('vehicleNumber').value = '';
+    document.getElementById('vehicleType').value   = '';
+    document.getElementById('grossWeight').value   = '';
+    document.getElementById('tareWeight').value    = '';
+    document.getElementById('netWeight').textContent = '0';
+    document.getElementById('unloading').selectedIndex   = 0;
+    document.getElementById('garbageType').selectedIndex = 0;
+    document.getElementById('entryType').selectedIndex   = 0;
+    document.getElementById('wardName').selectedIndex    = 0;
+    showToast('Form has been reset.', 'info');
+  }
+
+  function refreshForm() {
+    showToast('Data refreshed successfully.', 'info');
+  }
+
+  function submitForm() {
+    const driver  = document.getElementById('driverName').value.trim();
+    const vehicle = document.getElementById('vehicleNumber').value.trim();
+
+    if (!driver || !vehicle) {
+      showToast('Please fill in driver name and vehicle number.', 'error');
+      return;
+    }
+
+    const gross = parseFloat(document.getElementById('grossWeight').value) || 0;
+    const tare  = parseFloat(document.getElementById('tareWeight').value)  || 0;
+
+    if (gross <= 0 || tare <= 0) {
+      showToast('Please enter valid gross and tare weights.', 'error');
+      return;
+    }
+    if (tare >= gross) {
+      showToast('Tare weight must be less than gross weight.', 'error');
+      return;
+    }
+
+    const net   = gross - tare;
+    const ward  = document.getElementById('wardName').value;
+    const entry = document.getElementById('entryType').value;
+
+    showToast(
+      `Entry submitted — ${entry} · Net ${net.toLocaleString()} kg · ${ward}`,
+      'success'
+    );
+  }
+
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent  = msg;
+    t.className    = `toast ${type}`;
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 3500);
+  }
+</script>
+
+</body>
+</html>
