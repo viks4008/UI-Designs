@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>PMC — Ramp Weighbridge MIS Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg: #f7f8fa;
+      --surface: #ffffff;
+      --surface2: #f0f2f5;
+      --border: #e4e7ec;
+      --border2: #cbd2da;
+      --text: #101828;
+      --text2: #475467;
+      --text3: #98a2b3;
+      --green: #12b76a;
+      --green-bg: #ecfdf3;
+      --green-tx: #027a48;
+      --blue: #2e90fa;
+      --blue-bg: #eff8ff;
+      --blue-tx: #175cd3;
+      --amber: #f79009;
+      --amber-bg: #fffaeb;
+      --amber-tx: #b54708;
+      --red: #f04438;
+      --red-bg: #fef3f2;
+      --red-tx: #b42318;
+      --purple: #7f56d9;
+      --purple-bg: #f9f5ff;
+      --purple-tx: #6941c6;
+      --teal: #0e9384;
+      --radius: 10px;
+      --radius-lg: 14px;
+      --shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.04);
+      --shadow-md: 0 4px 8px rgba(16, 24, 40, 0.08), 0 2px 4px rgba(16, 24, 40, 0.04);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-block {
+      height: 38px;
+      width: auto;
+      /* let it size naturally to the logo */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgb(240, 240, 243) 0%, #e1e9f1 100%);
+      border-radius: 10px;
+      padding: 6px 12px;
+      /* breathing room around the logo */
+      box-shadow: 0 2px 8px rgba(28, 14, 221, 0.3);
+    }
+
+    .logo-block img {
+      height: 35px;
+      /* controls the logo height inside the block */
+      width: auto;
+      object-fit: contain;
+    }
+
+    .header-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .header-sub {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 1px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* upload zone */
+    .upload-zone {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1.5px dashed var(--border2);
+      border-radius: var(--radius);
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: var(--bg);
+    }
+
+    .upload-zone:hover {
+      border-color: var(--green);
+      background: var(--green-bg);
+    }
+
+    .upload-zone input {
+      display: none;
+    }
+
+    .upload-zone span {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text2);
+    }
+
+    .upload-zone .upload-icon {
+      font-size: 16px;
+    }
+
+    .upload-info {
+      font-size: 11px;
+      color: var(--text3);
+    }
+
+    .upload-info.loaded {
+      color: var(--green-tx);
+      font-weight: 500;
+    }
+
+    .export-btn {
+      height: 34px;
+      padding: 0 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border2);
+      background: var(--surface);
+      color: var(--text2);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .export-btn:hover {
+      background: var(--bg);
+      border-color: var(--green);
+      color: var(--green-tx);
+    }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-label {
+      font-size: 11px;
+      color: var(--text3);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .f-select,
+    .f-input,
+    .f-date {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 12px;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .f-select:focus,
+    .f-input:focus,
+    .f-date:focus {
+      border-color: var(--green);
+    }
+
+    .f-input {
+      width: 130px;
+    }
+
+    .f-date {
+      width: 130px;
+    }
+
+    .filter-sep {
+      width: 1px;
+      height: 22px;
+      background: var(--border);
+    }
+
+    .clear-btn {
+      height: 32px;
+      padding: 0 12px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--red-bg);
+      color: var(--red-tx);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
+    }
+
+    .clear-btn:hover {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .apply-btn {
+      height: 32px;
+      padding: 0 16px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--blue);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
+    }
+
+    .apply-btn:hover {
+      background: #0e9f5c;
+    }
+
+    /* ── MAIN ── */
+    .main {
+      padding: 1.25rem 1.5rem;
+    }
+
+    /* ── TAB NAV ── */
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 4px;
+      width: fit-content;
+    }
+
+    .tab-btn {
+      padding: 7px 18px;
+      border-radius: 9px;
+      border: none;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      background: transparent;
+      color: var(--text2);
+      transition: all 0.18s;
+    }
+
+    .tab-btn.active {
+      background: var(--blue);
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(18, 183, 106, 0.25);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* ── KPI CARDS ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin-bottom: 1.25rem;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      transition: box-shadow 0.2s;
+    }
+
+    .kpi-card:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .kpi-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .kpi-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+    }
+
+    .kpi-delta {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .delta-up {
+      background: var(--green-bg);
+      color: var(--green-tx);
+    }
+
+    .delta-down {
+      background: var(--red-bg);
+      color: var(--red-tx);
+    }
+
+    .delta-neu {
+      background: var(--surface2);
+      color: var(--text2);
+    }
+
+    .kpi-val {
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 4px;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.1rem 1.25rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 1rem;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .card-sub {
+      font-size: 12px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    /* ── CHART ── */
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    /* ── LEGEND ── */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .leg {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .leg-sq {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ── TABLE ── */
+    .tbl-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 700px;
+    }
+
+    thead th {
+      background: var(--bg);
+      padding: 9px 12px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text2);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    thead th:hover {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    thead th.sort-asc::after {
+      content: ' ▲';
+      color: var(--green);
+    }
+
+    thead th.sort-desc::after {
+      content: ' ▼';
+      color: var(--green);
+    }
+
+    tbody td {
+      padding: 9px 12px;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: var(--bg);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .b-in {
+      background: var(--blue-bg);
+      color: var(--blue-tx);
+    }
+
+    .b-out {
+      background: var(--green-bg);
+      color: var(--green-tx);
+    }
+
+    .b-wet {
+      background: var(--blue-bg);
+      color: var(--blue-tx);
+    }
+
+    .b-dry {
+      background: var(--amber-bg);
+      color: var(--amber-tx);
+    }
+
+    .b-comp {
+      background: var(--purple-bg);
+      color: var(--purple-tx);
+    }
+
+    /* ── PAGINATION ── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0 0;
+    }
+
+    .page-info {
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .page-btns {
+      display: flex;
+      gap: 4px;
+    }
+
+    .page-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text2);
+      font-size: 12px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .page-btn:hover {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .page-btn.active {
+      background: var(--green);
+      color: #fff;
+      border-color: var(--green);
+    }
+
+    .page-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    /* ── UPLOAD SPLASH ── */
+    .splash {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      gap: 16px;
+    }
+
+    .splash-icon {
+      font-size: 56px;
+    }
+
+    .splash-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .splash-sub {
+      font-size: 14px;
+      color: var(--text2);
+      text-align: center;
+      max-width: 380px;
+      line-height: 1.6;
+    }
+
+    .splash-upload {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 2px dashed var(--border2);
+      border-radius: var(--radius-lg);
+      padding: 20px 36px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--surface);
+      text-align: center;
+    }
+
+    .splash-upload:hover {
+      border-color: var(--green);
+      background: var(--green-bg);
+    }
+
+    .splash-upload input {
+      display: none;
+    }
+
+    .splash-upload-text {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
+    }
+
+    .splash-upload-text span {
+      color: var(--green);
+    }
+
+    /* ── STAT BARS ── */
+    .stat-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .stat-bar-label {
+      font-size: 12px;
+      color: var(--text2);
+      width: 130px;
+      flex-shrink: 0;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .stat-bar-bg {
+      flex: 1;
+      height: 8px;
+      background: var(--surface2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .stat-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.6s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .stat-bar-val {
+      font-size: 12px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-weight: 500;
+      width: 60px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* scrollbars */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 3px;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .kpi-card {
+      animation: fadeIn 0.4s ease both;
+    }
+
+    .kpi-card:nth-child(1) {
+      animation-delay: .05s
+    }
+
+    .kpi-card:nth-child(2) {
+      animation-delay: .1s
+    }
+
+    .kpi-card:nth-child(3) {
+      animation-delay: .15s
+    }
+
+    .kpi-card:nth-child(4) {
+      animation-delay: .2s
+    }
+
+    .kpi-card:nth-child(5) {
+      animation-delay: .25s
+    }
+
+    .kpi-card:nth-child(6) {
+      animation-delay: .3s
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo-block">
+        <img
+          src="https://cdn.prod.website-files.com/6742b3dccc0f00830311b6f4/684fac76a16df6a9f8d6aada_Updated%20Logo%20-%20White%20(8).svg"
+          alt="CargoFL Logo" />
+      </div>
+      <div>
+        <div class="header-title">PMC Ramp Weighbridge MIS</div>
+        <div class="header-sub">Pune Municipal Corporation — Solid Waste Management</div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <label class="upload-zone" id="upload-zone-header">
+        <span class="upload-icon">📂</span>
+        <span>Upload Excel / CSV</span>
+        <input type="file" id="file-input-header" accept=".xlsx,.xls,.csv" onchange="handleFile(this)" />
+      </label>
+      <div class="upload-info" id="upload-info">No file loaded — using sample data</div>
+      <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="export-btn" onclick="window.print()">🖨 Print</button>
+    </div>
+  </header>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <span class="filter-label">DATE FROM</span>
+      <input type="date" class="f-date" id="f-from" value="2026-03-01" />
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">TO</span>
+      <input type="date" class="f-date" id="f-to" value="2026-03-31" />
+    </div>
+    <div class="filter-sep"></div>
+    <div class="filter-group">
+      <span class="filter-label">RAMP / LOGIN</span>
+      <select class="f-select" id="f-ramp">
+        <option value="">All Ramps</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">ENTRY TYPE</span>
+      <select class="f-select" id="f-entry">
+        <option value="">All</option>
+        <option>In Coming</option>
+        <option>Out Going</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">VEHICLE TYPE</span>
+      <select class="f-select" id="f-vtype">
+        <option value="">All Types</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">GARBAGE TYPE</span>
+      <select class="f-select" id="f-gtype">
+        <option value="">All</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">UNLOADING</span>
+      <select class="f-select" id="f-unload">
+        <option value="">All Sites</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">WARD</span>
+      <select class="f-select" id="f-ward">
+        <option value="">All Wards</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">VEHICLE NO.</span>
+      <input type="text" class="f-input" id="f-vnum" placeholder="e.g. MH12VF2731" />
+    </div>
+    <div class="filter-sep"></div>
+    <button class="apply-btn" onclick="applyFilters()">Apply Filters</button>
+    <button class="clear-btn" onclick="clearFilters()">✕ Clear</button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main-content">
+
+    <!-- UPLOAD SPLASH (shown until data loaded) -->
+    <div class="splash" id="splash">
+      <div class="splash-icon">⚖️</div>
+      <div class="splash-title">Weighbridge MIS Dashboard</div>
+      <div class="splash-sub">Upload your Excel file with weighbridge entry data to generate interactive reports, or
+        explore with the built-in sample data below.</div>
+      <label class="splash-upload">
+        <span style="font-size:28px;">📂</span>
+        <div>
+          <div class="splash-upload-text"><span>Click to upload</span> your .xlsx or .csv file</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">Columns: User Login, Depot No., Entry Type,
+            Vehicle Type, Tare/Gross/Net Weight, Date Time, Unloading, Garbage Type, Ward Office Name</div>
+        </div>
+        <input type="file" accept=".xlsx,.xls,.csv" onchange="handleFile(this)" />
+      </label>
+      <button class="apply-btn" style="padding:10px 28px;font-size:14px;" onclick="loadSampleData()">Load Sample
+        Data</button>
+    </div>
+
+    <!-- DASHBOARD (hidden until data) -->
+    <div id="dashboard" style="display:none;">
+
+      <!-- TAB NAV -->
+      <div class="tab-nav">
+        <button class="tab-btn active" onclick="showTab('overview',this)">Overview</button>
+        <button class="tab-btn" onclick="showTab('weight',this)">Weight Analysis</button>
+        <button class="tab-btn" onclick="showTab('vehicles',this)">Vehicles</button>
+        <button class="tab-btn" onclick="showTab('ward',this)">Ward-wise</button>
+        <button class="tab-btn" onclick="showTab('records',this)">All Records</button>
+      </div>
+
+      <!-- ═══ TAB: OVERVIEW ═══ -->
+      <div class="tab-panel active" id="tab-overview">
+        <div class="kpi-grid" id="kpi-grid"></div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Daily net weight (MT)</div>
+                <div class="card-sub">Incoming vs Outgoing</div>
+              </div>
+              <div class="legend">
+                <span class="leg"><span class="leg-sq" style="background:#12b76a"></span>Outgoing</span>
+                <span class="leg"><span class="leg-sq" style="background:#2e90fa"></span>Incoming</span>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:220px"><canvas id="c-daily" role="img"
+                aria-label="Daily net weight trend">Daily net weight incoming vs outgoing.</canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Entry type split</div>
+                <div class="card-sub">Incoming vs Outgoing trips</div>
+              </div>
+            </div>
+            <div class="legend">
+              <span class="leg"><span class="leg-sq" style="background:#2e90fa"></span>Incoming</span>
+              <span class="leg"><span class="leg-sq" style="background:#12b76a"></span>Outgoing</span>
+            </div>
+            <div class="chart-wrap" style="height:220px"><canvas id="c-entry-split" role="img"
+                aria-label="Entry type doughnut">Incoming vs Outgoing split.</canvas></div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Garbage type distribution</div>
+                <div class="card-sub">By net weight (MT)</div>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:200px"><canvas id="c-gtype" role="img"
+                aria-label="Garbage type bar chart">Garbage type breakdown by net weight.</canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Unloading site volume</div>
+                <div class="card-sub">Net weight delivered (MT)</div>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:200px"><canvas id="c-unload" role="img"
+                aria-label="Unloading site bar chart">Volume per unloading site.</canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TAB: WEIGHT ANALYSIS ═══ -->
+      <div class="tab-panel" id="tab-weight">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Gross vs Tare vs Net — by vehicle type</div>
+                <div class="card-sub">Average weight (MT)</div>
+              </div>
+            </div>
+            <div class="legend">
+              <span class="leg"><span class="leg-sq" style="background:#f79009"></span>Gross</span>
+              <span class="leg"><span class="leg-sq" style="background:#98a2b3"></span>Tare</span>
+              <span class="leg"><span class="leg-sq" style="background:#12b76a"></span>Net</span>
+            </div>
+            <div class="chart-wrap" style="height:240px"><canvas id="c-weights" role="img"
+                aria-label="Weight comparison bar chart">Gross, tare, net weight by vehicle type.</canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Net weight — time of day</div>
+                <div class="card-sub">Hourly distribution</div>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:240px"><canvas id="c-hourly" role="img"
+                aria-label="Hourly weight distribution">Net weight by hour of day.</canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Weekly net weight trend (MT)</div>
+              <div class="card-sub">Total per week for the selected period</div>
+            </div>
+          </div>
+          <div class="chart-wrap" style="height:180px"><canvas id="c-weekly" role="img"
+              aria-label="Weekly weight trend">Weekly net weight totals.</canvas></div>
+        </div>
+        <div class="three-col">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Net weight by garbage type</div>
+              </div>
+            </div>
+            <div id="bars-gtype"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Trips by vehicle type</div>
+              </div>
+            </div>
+            <div id="bars-vtype"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Net weight by unloading site</div>
+              </div>
+            </div>
+            <div id="bars-usite"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TAB: VEHICLES ═══ -->
+      <div class="tab-panel" id="tab-vehicles">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Vehicle type — trip count</div>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:240px"><canvas id="c-vtype-trips" role="img"
+                aria-label="Vehicle type trip count">Trips per vehicle type.</canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Top 10 vehicles by net weight (MT)</div>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:240px"><canvas id="c-top-veh" role="img"
+                aria-label="Top vehicles by net weight">Top vehicles by total net weight.</canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Vehicle summary table</div>
+              <div class="card-sub">Per vehicle aggregation</div>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vehicle No.</th>
+                  <th>Type</th>
+                  <th>Trips</th>
+                  <th>Avg Gross (MT)</th>
+                  <th>Avg Tare (MT)</th>
+                  <th>Total Net (MT)</th>
+                  <th>Avg Net (MT)</th>
+                  <th>Garbage Types</th>
+                </tr>
+              </thead>
+              <tbody id="t-vehicles"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TAB: WARD-WISE ═══ -->
+      <div class="tab-panel" id="tab-ward">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Net weight by ward office (MT)</div>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:280px"><canvas id="c-ward" role="img"
+                aria-label="Ward net weight bar chart">Net weight per ward.</canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Ward share — total net weight</div>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:280px"><canvas id="c-ward-pie" role="img"
+                aria-label="Ward share doughnut">Ward-wise share of total net weight.</canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Ward-wise summary</div>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ward Office</th>
+                  <th>Trips</th>
+                  <th>Total Gross (MT)</th>
+                  <th>Total Tare (MT)</th>
+                  <th>Total Net (MT)</th>
+                  <th>Avg Net/Trip (MT)</th>
+                  <!-- <th>Vehicle Types</th>
+                  <th>Depot Nos.</th> -->
+                </tr>
+              </thead>
+              <tbody id="t-ward"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TAB: ALL RECORDS ═══ -->
+      <div class="tab-panel" id="tab-records">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">All weighbridge entries</div>
+              <div class="card-sub" id="rec-count">Loading...</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <input type="text" class="f-input" id="search-rec" placeholder="Search any field..."
+                oninput="searchRecords()" style="width:200px;" />
+              <select class="f-select" id="page-size" onchange="changePageSize()">
+                <option value="25">25 / page</option>
+                <option value="50">50 / page</option>
+                <option value="100">100 / page</option>
+              </select>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead id="rec-thead"></thead>
+              <tbody id="rec-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <div class="page-info" id="page-info"></div>
+            <div class="page-btns" id="page-btns"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /dashboard -->
+  </div><!-- /main -->
+
+  <script>
+    // ── GLOBALS ──────────────────────────────────────────────────────────────
+    let RAW_DATA = [];
+    let FILT_DATA = [];
+    let COLUMNS = [];
+    let chartInst = {};
+    let curPage = 1;
+    let pageSize = 25;
+    let sortCol = -1;
+    let sortDir = 1;
+    let searchQ = '';
+
+    const COL_MAP = {
+      userLogin: ['user login', 'userlogin', 'user_login', 'login'],
+      depotNo: ['depot no', 'depot no.', 'depotno', 'depot_no', 'depot number'],
+      entryType: ['entry type', 'entrytype', 'entry_type'],
+      vehicleType: ['vehicle type', 'vehicletype', 'vehicle_type'],
+      tare: ['tare weight in (mt)', 'tare weight', 'tare (mt)', 'tare_weight', 'tare'],
+      gross: ['gross weight in (mt)', 'gross weight', 'gross (mt)', 'gross_weight', 'gross'],
+      net: ['net weight in (mt)', 'net weight', 'net (mt)', 'net_weight', 'net'],
+      dateTime: ['date time', 'datetime', 'date_time', 'date'],
+      unloading: ['unloading', 'unloading site', 'unloading_site'],
+      garbageType: ['garbage type', 'garbagetype', 'garbage_type'],
+      ward: ['ward office name', 'ward office name.', 'ward', 'ward_office'],
+      vehicleNo: ['vehicle no', 'vehicle no.', 'vehicle number', 'vehicleno', 'mh12', 'vehicle_no'],
+    };
+
+    function mapColumn(headers, keys) {
+      for (const k of keys) {
+        const idx = headers.findIndex(h => h.toLowerCase().trim() === k.toLowerCase());
+        if (idx >= 0) return idx;
+      }
+      return -1;
+    }
+
+    // ── SAMPLE DATA ───────────────────────────────────────────────────────────
+    function loadSampleData() {
+      const rows = [];
+      const types = ['In Coming', 'Out Going'];
+      const vtypes = ['DP', 'Compactor', 'BRC', 'Ghanta Truck', 'Tipper'];
+      const gtypes = ['सुका कचरा', 'ओला कचरा', 'मिश्र कचरा'];
+      const unloads = ['BRC', 'Farmer'];
+      const wards = ['Yeravada Kalas Dhanori', 'Kothrud Bavdhan', 'Aundh Baner', 'Hadapsar Mundhwa', 'Shivajinagar'];
+      const depots = [16, 161, 182, 341, 250, 420];
+      const vNos = ['MH12VF2731', 'MH12YQ7209', 'MH12WJ1940', 'MH12VF2694', 'mh12vf2730', 'mh12vf2726', '', ''];
+      for (let d = 1; d <= 31; d++) {
+        const count = Math.round(8 + Math.random() * 20);
+        for (let i = 0; i < count; i++) {
+          const et = types[i % 2];
+          const vt = vtypes[Math.floor(Math.random() * vtypes.length)];
+          const tare = +(3.5 + Math.random() * 8).toFixed(2);
+          const gross = +(tare + 0.3 + Math.random() * 15).toFixed(2);
+          const net = +(gross - tare).toFixed(2);
+          const h = Math.floor(6 + Math.random() * 12);
+          const m = Math.floor(Math.random() * 60);
+          rows.push({
+            userLogin: 'Nagar Road Ramp',
+            depotNo: depots[Math.floor(Math.random() * depots.length)],
+            entryType: et,
+            vehicleType: vt,
+            tare, gross, net,
+            dateTime: `3/${d}/2026 ${h}:${String(m).padStart(2, '0')}:00 ${h < 12 ? 'AM' : 'PM'}`,
+            unloading: unloads[Math.floor(Math.random() * unloads.length)],
+            garbageType: gtypes[Math.floor(Math.random() * gtypes.length)],
+            ward: wards[Math.floor(Math.random() * wards.length)],
+            vehicleNo: vNos[Math.floor(Math.random() * vNos.length)] || `MH12${Math.floor(1000 + Math.random() * 9000)}`,
+          });
+        }
+      }
+      COLUMNS = Object.keys(rows[0]);
+      processData(rows);
+    }
+
+    // ── FILE HANDLER ──────────────────────────────────────────────────────────
+    function handleFile(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(ws, { raw: false, defval: '' });
+          if (!json.length) { alert('No data found in sheet.'); return; }
+
+          const headers = Object.keys(json[0]);
+          const idx = {};
+          for (const [field, keys] of Object.entries(COL_MAP)) {
+            idx[field] = mapColumn(headers, keys);
+          }
+
+          const rows = json.map(r => {
+            const vals = Object.values(r);
+            return {
+              userLogin: idx.userLogin >= 0 ? vals[idx.userLogin] : '',
+              depotNo: idx.depotNo >= 0 ? vals[idx.depotNo] : '',
+              entryType: idx.entryType >= 0 ? vals[idx.entryType] : '',
+              vehicleType: idx.vehicleType >= 0 ? vals[idx.vehicleType] : '',
+              tare: idx.tare >= 0 ? parseFloat(vals[idx.tare]) || 0 : 0,
+              gross: idx.gross >= 0 ? parseFloat(vals[idx.gross]) || 0 : 0,
+              net: idx.net >= 0 ? parseFloat(vals[idx.net]) || 0 : 0,
+              dateTime: idx.dateTime >= 0 ? vals[idx.dateTime] : '',
+              unloading: idx.unloading >= 0 ? vals[idx.unloading] : '',
+              garbageType: idx.garbageType >= 0 ? vals[idx.garbageType] : '',
+              ward: idx.ward >= 0 ? vals[idx.ward] : '',
+              vehicleNo: idx.vehicleNo >= 0 ? vals[idx.vehicleNo] : '',
+            };
+          });
+
+          COLUMNS = Object.keys(rows[0]);
+          document.getElementById('upload-info').textContent = `✓ ${file.name} — ${rows.length.toLocaleString()} rows`;
+          document.getElementById('upload-info').className = 'upload-info loaded';
+          processData(rows);
+        } catch (err) {
+          alert('Error reading file: ' + err.message);
+        }
+      };
+      reader.readAsBinaryString(file);
+    }
+
+    // ── PROCESS ───────────────────────────────────────────────────────────────
+    function processData(rows) {
+      RAW_DATA = rows;
+      populateFilters(rows);
+      setDateRange(rows);
+      FILT_DATA = [...rows];
+      document.getElementById('splash').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      renderAll();
+    }
+
+    function populateFilters(rows) {
+      const unique = (key) => [...new Set(rows.map(r => r[key]).filter(Boolean))].sort();
+      fillSelect('f-ramp', unique('userLogin'));
+      fillSelect('f-vtype', unique('vehicleType'));
+      fillSelect('f-gtype', unique('garbageType'));
+      fillSelect('f-unload', unique('unloading'));
+      fillSelect('f-ward', unique('ward'));
+    }
+    function fillSelect(id, opts) {
+      const el = document.getElementById(id);
+      const first = el.options[0].text;
+      el.innerHTML = `<option value="">${first}</option>` + opts.map(o => `<option>${o}</option>`).join('');
+    }
+    function setDateRange(rows) {
+      const dates = rows.map(r => parseDate(r.dateTime)).filter(Boolean).sort((a, b) => a - b);
+      if (dates.length) {
+        document.getElementById('f-from').value = fmtInputDate(dates[0]);
+        document.getElementById('f-to').value = fmtInputDate(dates[dates.length - 1]);
+      }
+    }
+
+    function parseDate(s) {
+      if (!s) return null;
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    function fmtInputDate(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    // ── FILTERS ───────────────────────────────────────────────────────────────
+    function applyFilters() {
+      const from = document.getElementById('f-from').value ? new Date(document.getElementById('f-from').value) : null;
+      const to = document.getElementById('f-to').value ? new Date(document.getElementById('f-to').value + 'T23:59:59') : null;
+      const ramp = document.getElementById('f-ramp').value.toLowerCase();
+      const entry = document.getElementById('f-entry').value.toLowerCase();
+      const vtype = document.getElementById('f-vtype').value.toLowerCase();
+      const gtype = document.getElementById('f-gtype').value.toLowerCase();
+      const unload = document.getElementById('f-unload').value.toLowerCase();
+      const ward = document.getElementById('f-ward').value.toLowerCase();
+      const vnum = document.getElementById('f-vnum').value.toLowerCase().trim();
+
+      FILT_DATA = RAW_DATA.filter(r => {
+        const d = parseDate(r.dateTime);
+        if (from && d && d < from) return false;
+        if (to && d && d > to) return false;
+        if (ramp && !r.userLogin.toLowerCase().includes(ramp)) return false;
+        if (entry && r.entryType.toLowerCase() !== entry) return false;
+        if (vtype && r.vehicleType.toLowerCase() !== vtype) return false;
+        if (gtype && r.garbageType.toLowerCase() !== gtype) return false;
+        if (unload && r.unloading.toLowerCase() !== unload) return false;
+        if (ward && !r.ward.toLowerCase().includes(ward)) return false;
+        if (vnum && !r.vehicleNo.toLowerCase().includes(vnum)) return false;
+        return true;
+      });
+      curPage = 1; searchQ = '';
+      document.getElementById('search-rec').value = '';
+      renderAll();
+    }
+
+    function clearFilters() {
+      ['f-ramp', 'f-entry', 'f-vtype', 'f-gtype', 'f-unload', 'f-ward'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      document.getElementById('f-vnum').value = '';
+      document.getElementById('f-from').value = '';
+      document.getElementById('f-to').value = '';
+      setDateRange(RAW_DATA);
+      FILT_DATA = [...RAW_DATA];
+      curPage = 1;
+      renderAll();
+    }
+
+    // ── HELPERS ───────────────────────────────────────────────────────────────
+    function sum(arr, key) { return arr.reduce((s, r) => s + (+r[key] || 0), 0); }
+    function avg(arr, key) { return arr.length ? sum(arr, key) / arr.length : 0; }
+    function groupBy(arr, key) {
+      return arr.reduce((m, r) => { const k = r[key] || 'Unknown'; (m[k] = m[k] || []).push(r); return m; }, {});
+    }
+    function f2(n) { return (+n).toFixed(2); }
+    function fK(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'K' : Math.round(n).toLocaleString(); }
+
+    const COLORS = ['#12b76a', '#2e90fa', '#f79009', '#7f56d9', '#0e9384', '#f04438', '#ee46bc', '#475467', '#16b364', '#1570ef'];
+
+    // ── CHARTS ────────────────────────────────────────────────────────────────
+    function mkChart(id, cfg) {
+      if (chartInst[id]) { chartInst[id].destroy(); }
+      const el = document.getElementById(id);
+      if (el) chartInst[id] = new Chart(el, cfg);
+    }
+
+    const BASE_OPTS = {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { size: 11 }, color: '#98a2b3' }, grid: { color: 'rgba(0,0,0,0.04)' } },
+        y: { ticks: { font: { size: 11 }, color: '#98a2b3' }, grid: { color: 'rgba(0,0,0,0.04)' } }
+      }
+    };
+
+    // ── RENDER ALL ────────────────────────────────────────────────────────────
+    function renderAll() {
+      renderKPIs();
+      renderOverview();
+      renderWeightAnalysis();
+      renderVehicles();
+      renderWard();
+      renderRecords();
+    }
+
+    // ── KPIs ─────────────────────────────────────────────────────────────────
+    function renderKPIs() {
+      const d = FILT_DATA;
+      const totalNet = sum(d, 'net');
+      const totalGross = sum(d, 'gross');
+      const totalTare = sum(d, 'tare');
+      const trips = d.length;
+      const incoming = d.filter(r => r.entryType === 'In Coming').length;
+      const outgoing = d.filter(r => r.entryType === 'Out Going').length;
+      const avgNet = avg(d, 'net');
+      const uniqVeh = new Set(d.map(r => r.vehicleNo).filter(Boolean)).size;
+
+      const cards = [
+        { icon: '⚖️', bg: '#ecfdf3', label: 'Total net weight', val: f2(totalNet) + ' MT', delta: 'All entries', cls: 'delta-neu' },
+        { icon: '🚚', bg: '#eff8ff', label: 'Total trips', val: fK(trips), delta: `${incoming} in / ${outgoing} out`, cls: 'delta-neu' },
+        { icon: '📥', bg: '#eff8ff', label: 'Total gross weight', val: f2(totalGross) + ' MT', delta: 'Loaded weight', cls: 'delta-neu' },
+        { icon: '📤', bg: '#fff7ed', label: 'Total tare weight', val: f2(totalTare) + ' MT', delta: 'Vehicle weight', cls: 'delta-neu' },
+        { icon: '📊', bg: '#ecfdf3', label: 'Avg net/trip', val: f2(avgNet) + ' MT', delta: 'Per entry', cls: 'delta-neu' },
+      ];
+      document.getElementById('kpi-grid').innerHTML = cards.map(c => `
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <div class="kpi-icon" style="background:${c.bg};">${c.icon}</div>
+        <div class="kpi-delta ${c.cls}">${c.delta}</div>
+      </div>
+      <div class="kpi-val">${c.val}</div>
+      <div class="kpi-label">${c.label}</div>
+    </div>`).join('');
+    }
+
+    // ── OVERVIEW ──────────────────────────────────────────────────────────────
+    function renderOverview() {
+      const d = FILT_DATA;
+
+      // Daily net weight
+      const byDay = groupBy(d, r => { const dt = parseDate(r.dateTime); return dt ? `${dt.getMonth() + 1}/${dt.getDate()}` : 'Unknown'; });
+      const dayKeys = Object.keys(byDay).sort((a, b) => {
+        const [am, ad] = a.split('/').map(Number), [bm, bd] = b.split('/').map(Number);
+        return am !== bm ? am - bm : ad - bd;
+      });
+      const incData = dayKeys.map(k => +f2(sum(byDay[k].filter(r => r.entryType === 'In Coming'), 'net')));
+      const outData = dayKeys.map(k => +f2(sum(byDay[k].filter(r => r.entryType === 'Out Going'), 'net')));
+      mkChart('c-daily', {
+        type: 'bar', data: {
+          labels: dayKeys, datasets: [
+            { label: 'Outgoing', data: outData, backgroundColor: '#12b76a', borderRadius: 3, stack: 's' },
+            { label: 'Incoming', data: incData, backgroundColor: '#2e90fa', borderRadius: 3, stack: 's' },
+          ]
+        }, options: { ...BASE_OPTS, scales: { x: { ...BASE_OPTS.scales.x, stacked: true }, y: { ...BASE_OPTS.scales.y, stacked: true } } }
+      });
+
+      // Entry split doughnut
+      const inCount = d.filter(r => r.entryType === 'In Coming').length;
+      const outCount = d.filter(r => r.entryType === 'Out Going').length;
+      mkChart('c-entry-split', { type: 'doughnut', data: { labels: ['Incoming', 'Outgoing'], datasets: [{ data: [inCount, outCount], backgroundColor: ['#2e90fa', '#12b76a'], borderWidth: 2, borderColor: '#fff' }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { display: false } } } });
+
+      // Garbage type
+      const gBd = groupBy(d, 'garbageType');
+      const gKeys = Object.keys(gBd).sort((a, b) => sum(gBd[b], 'net') - sum(gBd[a], 'net'));
+      mkChart('c-gtype', { type: 'bar', data: { labels: gKeys, datasets: [{ label: 'Net MT', data: gKeys.map(k => +f2(sum(gBd[k], 'net'))), backgroundColor: COLORS, borderRadius: 4 }] }, options: { ...BASE_OPTS, indexAxis: 'y', scales: { x: { ...BASE_OPTS.scales.x }, y: { ticks: { font: { size: 11 }, color: '#475467' } } } } });
+
+      // Unloading site
+      const uBd = groupBy(d, 'unloading');
+      const uKeys = Object.keys(uBd).sort((a, b) => sum(uBd[b], 'net') - sum(uBd[a], 'net'));
+      mkChart('c-unload', { type: 'bar', data: { labels: uKeys, datasets: [{ label: 'Net MT', data: uKeys.map(k => +f2(sum(uBd[k], 'net'))), backgroundColor: COLORS.slice(2), borderRadius: 4 }] }, options: { ...BASE_OPTS } });
+    }
+
+    // ── WEIGHT ANALYSIS ───────────────────────────────────────────────────────
+    function renderWeightAnalysis() {
+      const d = FILT_DATA;
+
+      // Gross vs Tare vs Net by vehicle type
+      const vtBd = groupBy(d, 'vehicleType');
+      const vtKeys = Object.keys(vtBd);
+      mkChart('c-weights', {
+        type: 'bar', data: {
+          labels: vtKeys, datasets: [
+            { label: 'Gross', data: vtKeys.map(k => +f2(avg(vtBd[k], 'gross'))), backgroundColor: '#f79009', borderRadius: 3 },
+            { label: 'Tare', data: vtKeys.map(k => +f2(avg(vtBd[k], 'tare'))), backgroundColor: '#98a2b3', borderRadius: 3 },
+            { label: 'Net', data: vtKeys.map(k => +f2(avg(vtBd[k], 'net'))), backgroundColor: '#12b76a', borderRadius: 3 },
+          ]
+        }, options: { ...BASE_OPTS }
+      });
+
+      // Hourly
+      const hourly = Array(24).fill(0);
+      const hourlyC = Array(24).fill(0);
+      d.forEach(r => { const dt = parseDate(r.dateTime); if (dt) { hourly[dt.getHours()] += r.net; hourlyC[dt.getHours()]++; } });
+      const hourLabels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+      mkChart('c-hourly', { type: 'line', data: { labels: hourLabels, datasets: [{ label: 'Net MT', data: hourly.map(v => +f2(v)), borderColor: '#7f56d9', backgroundColor: 'rgba(127,86,217,0.08)', fill: true, tension: 0.4, pointRadius: 2, pointBackgroundColor: '#7f56d9' }] }, options: { ...BASE_OPTS } });
+
+      // Weekly
+      const weekMap = {};
+      d.forEach(r => { const dt = parseDate(r.dateTime); if (dt) { const wk = `W${Math.ceil(dt.getDate() / 7)}`; weekMap[wk] = (weekMap[wk] || 0) + (+r.net || 0); } });
+      const wks = Object.keys(weekMap).sort();
+      mkChart('c-weekly', { type: 'line', data: { labels: wks, datasets: [{ label: 'Net MT', data: wks.map(k => +f2(weekMap[k])), borderColor: '#0e9384', backgroundColor: 'rgba(14,147,132,0.08)', fill: true, tension: 0.3, pointRadius: 5, pointBackgroundColor: '#0e9384', pointBorderColor: '#fff', pointBorderWidth: 2 }] }, options: { ...BASE_OPTS } });
+
+      // Stat bars
+      renderStatBars('bars-gtype', groupBy(d, 'garbageType'), 'net', '#12b76a');
+      renderStatBars('bars-vtype', groupBy(d, 'vehicleType'), r => r.length, '#2e90fa', true);
+      renderStatBars('bars-usite', groupBy(d, 'unloading'), 'net', '#7f56d9');
+    }
+
+    function renderStatBars(id, grouped, key, color, isCount = false) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const entries = Object.entries(grouped).map(([k, v]) => [k, isCount ? v.length : sum(v, key)]);
+      entries.sort((a, b) => b[1] - a[1]);
+      const max = entries[0]?.[1] || 1;
+      el.innerHTML = entries.map(([k, v]) => `
+    <div class="stat-bar-row">
+      <span class="stat-bar-label" title="${k}">${k}</span>
+      <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${Math.round(v / max * 100)}%;background:${color};"></div></div>
+      <span class="stat-bar-val">${isCount ? v : f2(v)}</span>
+    </div>`).join('');
+    }
+
+    // ── VEHICLES ──────────────────────────────────────────────────────────────
+    function renderVehicles() {
+      const d = FILT_DATA;
+      const vtBd = groupBy(d, 'vehicleType');
+      const vtKeys = Object.keys(vtBd);
+      mkChart('c-vtype-trips', { type: 'bar', data: { labels: vtKeys, datasets: [{ label: 'Trips', data: vtKeys.map(k => vtBd[k].length), backgroundColor: COLORS, borderRadius: 4 }] }, options: { ...BASE_OPTS } });
+
+      // top vehicles
+      const vBd = groupBy(d, 'vehicleNo');
+      const topV = Object.entries(vBd).map(([k, v]) => [k.toUpperCase() || 'Unknown', +f2(sum(v, 'net'))]).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      mkChart('c-top-veh', { type: 'bar', data: { labels: topV.map(v => v[0]), datasets: [{ label: 'Net MT', data: topV.map(v => v[1]), backgroundColor: '#2e90fa', borderRadius: 4 }] }, options: { ...BASE_OPTS, indexAxis: 'y', scales: { x: { ...BASE_OPTS.scales.x }, y: { ticks: { font: { size: 10 }, color: '#475467' } } } } });
+
+      // vehicle table
+      const tbody = document.getElementById('t-vehicles');
+      tbody.innerHTML = '';
+      const rows = Object.entries(vBd).map(([k, v]) => ({
+        vehicleNo: k.toUpperCase() || 'Unknown',
+        type: [...new Set(v.map(r => r.vehicleType))].join(', '),
+        trips: v.length,
+        avgGross: +f2(avg(v, 'gross')),
+        avgTare: +f2(avg(v, 'tare')),
+        totalNet: +f2(sum(v, 'net')),
+        avgNet: +f2(avg(v, 'net')),
+        gTypes: [...new Set(v.map(r => r.garbageType).filter(Boolean))].join(', '),
+      })).sort((a, b) => b.totalNet - a.totalNet);
+      tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td><span style="font-family:'DM Mono',monospace;font-size:12px;">${r.vehicleNo}</span></td>
+      <td>${r.type}</td>
+      <td>${r.trips}</td>
+      <td>${r.avgGross}</td>
+      <td>${r.avgTare}</td>
+      <td><strong>${r.totalNet}</strong></td>
+      <td>${r.avgNet}</td>
+      <td>${r.gTypes}</td>
+    </tr>`).join('');
+    }
+
+    // ── WARD ─────────────────────────────────────────────────────────────────
+    function renderWard() {
+      const d = FILT_DATA;
+      const wBd = groupBy(d, 'ward');
+      const wKeys = Object.keys(wBd).sort((a, b) => sum(wBd[b], 'net') - sum(wBd[a], 'net'));
+      const netByWard = wKeys.map(k => +f2(sum(wBd[k], 'net')));
+
+      mkChart('c-ward', { type: 'bar', data: { labels: wKeys, datasets: [{ label: 'Net MT', data: netByWard, backgroundColor: '#0e9384', borderRadius: 4 }] }, options: { ...BASE_OPTS, indexAxis: 'y', scales: { x: { ...BASE_OPTS.scales.x }, y: { ticks: { font: { size: 11 }, color: '#475467' } } } } });
+
+      const pieColors = COLORS.slice(0, wKeys.length);
+      mkChart('c-ward-pie', { type: 'doughnut', data: { labels: wKeys, datasets: [{ data: netByWard, backgroundColor: pieColors, borderWidth: 2, borderColor: '#fff' }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '55%', plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 11 }, color: '#475467', padding: 10, boxWidth: 12 } } } } });
+
+      const tbody = document.getElementById('t-ward');
+      tbody.innerHTML = '';
+      wKeys.forEach(w => {
+        const v = wBd[w];
+        tbody.innerHTML += `
+      <tr>
+        <td>${w}</td>
+        <td>${v.length}</td>
+        <td>${f2(sum(v, 'gross'))}</td>
+        <td>${f2(sum(v, 'tare'))}</td>
+        <td><strong>${f2(sum(v, 'net'))}</strong></td>
+        <td>${f2(avg(v, 'net'))}</td>
+    
+      </tr>`;
+      });
+    }
+
+    // ── RECORDS TABLE ─────────────────────────────────────────────────────────
+    function getFilteredRecords() {
+      if (!searchQ) return FILT_DATA;
+      const q = searchQ.toLowerCase();
+      return FILT_DATA.filter(r => Object.values(r).some(v => (v + '').toLowerCase().includes(q)));
+    }
+
+    function renderRecords() {
+      const COLS = [
+        ['userLogin', 'Ramp'], ['depotNo', 'Depot'], ['entryType', 'Entry Type'],
+        ['vehicleType', 'Vehicle Type'], ['vehicleNo', 'Vehicle No.'],
+        ['tare', 'Tare (MT)'], ['gross', 'Gross (MT)'], ['net', 'Net (MT)'],
+        ['dateTime', 'Date & Time'], ['unloading', 'Unloading'],
+        ['garbageType', 'Garbage Type'], ['ward', 'Ward Office'],
+      ];
+
+      const thead = document.getElementById('rec-thead');
+      thead.innerHTML = '<tr>' + COLS.map(([k, l], i) => `<th onclick="sortRecords(${i},'${k}')" id="th-${i}">${l}</th>`).join('') + '</tr>';
+
+      const recs = getFilteredRecords();
+      const total = recs.length;
+      const totalPages = Math.ceil(total / pageSize) || 1;
+      curPage = Math.min(curPage, totalPages);
+      const start = (curPage - 1) * pageSize;
+      const slice = recs.slice(start, start + pageSize);
+
+      document.getElementById('rec-count').textContent = `${total.toLocaleString()} entries (filtered from ${RAW_DATA.length.toLocaleString()})`;
+
+      const entryBadge = et => et === 'In Coming' ? '<span class="badge b-in">In Coming</span>' : '<span class="badge b-out">Out Going</span>';
+      const garbage = g => g.includes('सुका') || g.includes('Dry') ? `<span class="badge b-dry">${g}</span>` : g.includes('ओला') || g.includes('Wet') ? `<span class="badge b-wet">${g}</span>` : `<span class="badge b-comp">${g}</span>`;
+
+      const tbody = document.getElementById('rec-tbody');
+      tbody.innerHTML = slice.map(r => `
+    <tr>
+      <td>${r.userLogin}</td>
+      <td>${r.depotNo}</td>
+      <td>${entryBadge(r.entryType)}</td>
+      <td>${r.vehicleType}</td>
+      <td><span style="font-family:'DM Mono',monospace;font-size:11px;">${r.vehicleNo || '—'}</span></td>
+      <td>${f2(r.tare)}</td>
+      <td>${f2(r.gross)}</td>
+      <td><strong>${f2(r.net)}</strong></td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;">${r.dateTime}</td>
+      <td>${r.unloading}</td>
+      <td>${garbage(r.garbageType)}</td>
+      <td>${r.ward}</td>
+    </tr>`).join('');
+
+      // Pagination
+      document.getElementById('page-info').textContent = `Showing ${start + 1}–${Math.min(start + pageSize, total)} of ${total.toLocaleString()}`;
+      renderPagination(totalPages);
+    }
+
+    function renderPagination(total) {
+      const el = document.getElementById('page-btns');
+      let html = `<button class="page-btn" onclick="goPage(${curPage - 1})" ${curPage <= 1 ? 'disabled' : ''}>‹</button>`;
+      const range = [];
+      for (let i = 1; i <= total; i++) {
+        if (i === 1 || i === total || Math.abs(i - curPage) <= 2) range.push(i);
+        else if (range[range.length - 1] !== '…') range.push('…');
+      }
+      range.forEach(p => {
+        if (p === '…') html += `<span style="padding:0 4px;color:var(--text3);line-height:30px;">…</span>`;
+        else html += `<button class="page-btn${p === curPage ? ' active' : ''}" onclick="goPage(${p})">${p}</button>`;
+      });
+      html += `<button class="page-btn" onclick="goPage(${curPage + 1})" ${curPage >= total ? 'disabled' : ''}>›</button>`;
+      el.innerHTML = html;
+    }
+
+    function goPage(p) { curPage = p; renderRecords(); }
+    function changePageSize() { pageSize = +document.getElementById('page-size').value; curPage = 1; renderRecords(); }
+    function searchRecords() { searchQ = document.getElementById('search-rec').value; curPage = 1; renderRecords(); }
+
+    function sortRecords(colIdx, key) {
+      if (sortCol === colIdx) sortDir *= -1; else { sortCol = colIdx; sortDir = 1; }
+      document.querySelectorAll('thead th').forEach((th, i) => { th.className = i === colIdx ? (sortDir === 1 ? 'sort-asc' : 'sort-desc') : ''; });
+      FILT_DATA.sort((a, b) => { const av = a[key] || '', bv = b[key] || ''; return typeof av === 'number' ? (av - bv) * sortDir : av.localeCompare(bv) * sortDir; });
+      curPage = 1; renderRecords();
+    }
+
+    // ── TABS ─────────────────────────────────────────────────────────────────
+    function showTab(name, btn) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    // ── EXPORT CSV ───────────────────────────────────────────────────────────
+    function exportCSV() {
+      if (!FILT_DATA.length) { alert('No data to export.'); return; }
+      const cols = Object.keys(FILT_DATA[0]);
+      const rows = [cols.join(','), ...FILT_DATA.map(r => cols.map(c => `"${(r[c] ?? '').toString().replace(/"/g, '""')}"`).join(','))];
+      const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'pmc_weighbridge_data.csv';
+      a.click();
+    }
+
+    // ── BOOT ─────────────────────────────────────────────────────────────────
+    window.addEventListener('load', () => {
+      // Auto-load sample data for demo
+      loadSampleData();
+    });
+  </script>
+</body>
+
+</html>
